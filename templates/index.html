@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroPredict | ML Inference Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark-theme">
+
+    <!-- 1. AUTH GATE CONTAINER -->
+    <div id="auth-gate" class="auth-container animate__animated animate__fadeIn">
+        <!-- Login Card -->
+        <div id="login-card" class="auth-card">
+            <h2>Welcome Back</h2>
+            <p class="subtitle">Access the neural prediction engine</p>
+            <!-- JS only manages the UI switch to dashboard -->
+            <form id="login-form" onsubmit="handleAuth(event, 'login')">
+                <div class="input-group">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" placeholder="Email Address" required>
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Authenticate</button>
+            </form>
+            <p class="switch-text">New to the platform? <a href="#" onclick="switchAuth('signup')">Create an account</a></p>
+        </div>
+
+        <!-- Signup Card -->
+        <div id="signup-card" class="auth-card hidden">
+            <h2>Create Account</h2>
+            <p class="subtitle">Register to unlock ML model configurations</p>
+            <form id="signup-form" onsubmit="handleAuth(event, 'signup')">
+                <div class="input-group">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" placeholder="Full Name" required>
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" placeholder="Email Address" required>
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Register Portal</button>
+            </form>
+            <p class="switch-text">Already verified? <a href="#" onclick="switchAuth('login')">Sign In</a></p>
+        </div>
+    </div>
+
+    <!-- 2. MAIN APP DASHBOARD -->
+    <div id="main-dashboard" class="dashboard-container hidden">
+        <header class="dash-header">
+            <div class="logo">
+                <i class="fa-solid fa-brain-circuit text-gradient"></i>
+                <span>Neuro<span class="highlight">Predict</span></span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+        </header>
+
+        <main class="dash-content animate__animated animate__fadeInUp">
+            <div class="form-wrapper">
+                <h3>Regression Model Features</h3>
+                <p class="form-desc">Provide parameters for the Prediction.</p>
+                
+                <!-- Action points directly to your Python backend URL -->
+                <form id="prediction-form" onsubmit="runInference(event)">
+                    
+                    <!-- Feature 1: Recency (Days) -->
+                    <div class="form-group">
+                        <label for="feature_age">Recency (Days)</label>
+                        <input type="number" name="age" id="recency" placeholder="e.g. 5" required>
+                    </div>
+
+                    <!-- Feature 2: Frequency (Count) -->
+                    <div class="form-group">
+                        <label for="feature_income">Frequency (Count)</label>
+                        <input type="number" name="income" id="frequency" placeholder="e.g. 24" required>
+                    </div>
+
+                    <!-- Feature 3: Tenure (Days) -->
+                    <div class="form-group">
+                        <label for="feature_credit">Tenure (Days)</label>
+                        <input type="number" name="credit_score" id="tenure" placeholder="e.g. 180" required>
+                    </div>
+
+                    <!-- Feature 4: Total spend (Dollars) -->
+                    <div class="form-group">
+                        <label for="feature_variance">Total spend (Dollars)</label>
+                        <input type="number" name="variance" id="total_historical_spend" placeholder="e.g. 4250.00" required>
+                    </div>
+
+                    <!-- Feature 5: Avg value per order (Dollars) -->
+                    <div class="form-group">
+                        <label for="feature_variance">Avg value per order (Dollars)</label>
+                        <input type="number" name="variance" id="avg_order_value" placeholder="e.g. 177.08" required>
+                    </div>
+
+                    <!-- Feature 4: Total items brought (Count) -->
+                    <div class="form-group">
+                        <label for="feature_variance">Total items brought (Count)</label>
+                        <input type="number" name="variance" id="total_items_bought" placeholder="e.g. 1850" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-submit">
+                        <i class="fa-solid fa-bolt"></i> Predict the outcome
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- 3. MODAL POPUP FOR PREDICTIONS -->
+    <div id="prediction-modal" class="modal-overlay hidden">
+        <div class="modal-card animate__animated animate__bounceInDown">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-chart-line"></i> Model Server Output</h3>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- JS handles only this UI loader transition -->
+                <div class="loader-wrapper" id="modal-loader">
+                    <div class="spinner"></div>
+                    <p>Awaiting app.py response matrix...</p>
+                </div>
+                <div id="modal-results" class="hidden">
+                    <div class="prediction-score">
+                        <span class="score-label">Regression Return Value</span>
+                        <!-- Your Python response string will replace this placeholder natively -->
+                        <h2 class="score-value text-gradient-success" id="python-output">Processing...</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
